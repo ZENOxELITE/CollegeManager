@@ -54,17 +54,20 @@ def register_user(username: str, password: str, role: str) -> tuple[bool, str]:
 
 def show_login_form():
     """Display the login form."""
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("login_form", clear_on_submit=True):
+            st.subheader("🔐 Login")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Login", use_container_width=True)
 
-        if submitted:
-            if login(username, password):
-                st.success("Logged in successfully!")
-                st.rerun()  # Using st.rerun() instead of experimental_rerun
-            else:
-                st.error("Invalid username or password")
+            if submitted:
+                if login(username, password):
+                    st.success("Logged in successfully!")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password")
 
 def show_register_form():
     """Display the registration form."""
@@ -72,11 +75,12 @@ def show_register_form():
         st.error("Only administrators can register new users")
         return
 
-    with st.form("register_form"):
+    with st.form("register_form", clear_on_submit=True):
+        st.subheader("📝 Register New User")
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         role = st.selectbox("Role", ['teacher', 'student'])
-        submitted = st.form_submit_button("Register User")
+        submitted = st.form_submit_button("Register User", use_container_width=True)
 
         if submitted:
             success, message = register_user(username, password, role)
@@ -93,11 +97,11 @@ def require_auth(role: Optional[str] = None):
                 st.error("Please log in to access this page")
                 show_login_form()
                 return
-            
+
             if role and st.session_state.user_role != role and st.session_state.user_role != 'admin':
                 st.error("You don't have permission to access this page")
                 return
-            
+
             return func(*args, **kwargs)
         return wrapper
     return decorator

@@ -14,39 +14,49 @@ def main():
     initialize_session_state()
     init_auth()
 
-    # Sidebar
-    st.sidebar.title("Navigation")
+    # Page header with navigation and auth info
+    st.title("College Management System")
 
-    # Show authentication status and logout button
+    # Create header with columns for nav and auth
+    header_left, header_right = st.columns([3, 1])
+
+    # Authentication status
+    with header_right:
+        if st.session_state.authenticated:
+            st.info(f"👤 {st.session_state.username} ({st.session_state.user_role})")
+            if st.button("Logout", key="logout_btn"):
+                logout()
+                st.rerun()
+
+    # Navigation bar
     if st.session_state.authenticated:
-        st.sidebar.success(f"Logged in as: {st.session_state.username}")
-        st.sidebar.success(f"Role: {st.session_state.user_role}")
-        if st.sidebar.button("Logout"):
-            logout()
-            st.rerun()  # Updated to use st.rerun()
-
-        # Show navigation based on role
-        if st.session_state.user_role == 'admin':
-            page = st.sidebar.radio(
-                "Go to",
-                ["Dashboard", "Student Management", "Teacher Management", "User Management"]
-            )
-        elif st.session_state.user_role == 'teacher':
-            page = st.sidebar.radio(
-                "Go to",
-                ["Dashboard", "Student Management"]
-            )
-        else:  # student role
-            page = st.sidebar.radio(
-                "Go to",
-                ["Dashboard"]
-            )
+        with header_left:
+            # Show navigation based on role
+            if st.session_state.user_role == 'admin':
+                page = st.radio(
+                    "Navigation",
+                    ["Dashboard", "Student Management", "Teacher Management", "User Management"],
+                    horizontal=True,
+                    key="nav_admin"
+                )
+            elif st.session_state.user_role == 'teacher':
+                page = st.radio(
+                    "Navigation",
+                    ["Dashboard", "Student Management"],
+                    horizontal=True,
+                    key="nav_teacher"
+                )
+            else:  # student role
+                page = st.radio(
+                    "Navigation",
+                    ["Dashboard"],
+                    horizontal=True,
+                    key="nav_student"
+                )
     else:
         show_login_form()
         st.stop()
 
-    # Page header
-    st.title("College Management System")
     st.divider()
 
     # Page routing with role-based access
