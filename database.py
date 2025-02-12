@@ -5,17 +5,12 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 # Get database URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
 # Configure SQLAlchemy with proper connection parameters
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # Enable connection health checks
     pool_recycle=3600,   # Recycle connections every hour
-    connect_args={
-        "sslmode": "prefer"  # Use SSL if available, but don't require it
-    }
 )
 
 SessionLocal = scoped_session(sessionmaker(
@@ -28,22 +23,22 @@ Base = declarative_base()
 class Student(Base):
     __tablename__ = "students"
 
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    department = Column(String, nullable=False)
+    id = Column(String(50), primary_key=True)
+    name = Column(String(100), nullable=False)
+    department = Column(String(100), nullable=False)
     year = Column(Integer, nullable=False)
-    email = Column(String, nullable=False)
-    phone = Column(String, nullable=False)
+    email = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
 
 class Teacher(Base):
     __tablename__ = "teachers"
 
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    department = Column(String, nullable=False)
-    subjects = Column(String, nullable=False)
-    email = Column(String, nullable=False)
-    phone = Column(String, nullable=False)
+    id = Column(String(50), primary_key=True)
+    name = Column(String(100), nullable=False)
+    department = Column(String(100), nullable=False)
+    subjects = Column(String(200), nullable=False)
+    email = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
 
 def init_db():
     """Initialize database and create tables"""

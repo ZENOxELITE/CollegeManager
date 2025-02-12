@@ -5,9 +5,11 @@ description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
     "components>=0.0.1a0",
+    "mysql-connector-python>=9.2.0",
     "pandas>=2.2.3",
     "plotly>=6.0.0",
     "psycopg2-binary>=2.9.10",
+    "pymysql>=1.1.1",
     "python-dotenv>=1.0.1",
     "sqlalchemy>=2.0.38",
     "streamlit>=1.42.0",
