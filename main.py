@@ -9,6 +9,41 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS for responsive design
+st.markdown("""
+<style>
+    /* Make buttons more touch-friendly */
+    .stButton>button {
+        min-height: 40px;
+        width: 100%;
+    }
+
+    /* Improve form elements on mobile */
+    .stTextInput>div>div>input {
+        min-height: 40px;
+    }
+
+    /* Better spacing for mobile */
+    @media (max-width: 640px) {
+        .main {
+            padding: 1rem 0.5rem;
+        }
+        .stRadio > label {
+            font-size: 14px;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+
+    /* Navigation styling */
+    .nav-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 def main():
     # Initialize session states
     initialize_session_state()
