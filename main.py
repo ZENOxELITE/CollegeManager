@@ -23,7 +23,7 @@ def main():
         st.sidebar.success(f"Role: {st.session_state.user_role}")
         if st.sidebar.button("Logout"):
             logout()
-            st.experimental_rerun()
+            st.rerun()  # Updated to use st.rerun()
 
         # Show navigation based on role
         if st.session_state.user_role == 'admin':

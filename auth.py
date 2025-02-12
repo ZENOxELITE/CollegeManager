@@ -45,12 +45,45 @@ def register_user(username: str, password: str, role: str) -> tuple[bool, str]:
         return False, "Username already exists"
     if role not in ['admin', 'teacher', 'student']:
         return False, "Invalid role"
-    
+
     st.session_state.users[username] = {
         'password': hash_password(password),
         'role': role
     }
     return True, "User registered successfully"
+
+def show_login_form():
+    """Display the login form."""
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Login")
+
+        if submitted:
+            if login(username, password):
+                st.success("Logged in successfully!")
+                st.rerun()  # Using st.rerun() instead of experimental_rerun
+            else:
+                st.error("Invalid username or password")
+
+def show_register_form():
+    """Display the registration form."""
+    if st.session_state.get('user_role') != 'admin':
+        st.error("Only administrators can register new users")
+        return
+
+    with st.form("register_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        role = st.selectbox("Role", ['teacher', 'student'])
+        submitted = st.form_submit_button("Register User")
+
+        if submitted:
+            success, message = register_user(username, password, role)
+            if success:
+                st.success(message)
+            else:
+                st.error(message)
 
 def require_auth(role: Optional[str] = None):
     """Decorator to require authentication and optionally a specific role."""
@@ -68,36 +101,3 @@ def require_auth(role: Optional[str] = None):
             return func(*args, **kwargs)
         return wrapper
     return decorator
-
-def show_login_form():
-    """Display the login form."""
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-        
-        if submitted:
-            if login(username, password):
-                st.success("Logged in successfully!")
-                st.experimental_rerun()
-            else:
-                st.error("Invalid username or password")
-
-def show_register_form():
-    """Display the registration form."""
-    if st.session_state.get('user_role') != 'admin':
-        st.error("Only administrators can register new users")
-        return
-
-    with st.form("register_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        role = st.selectbox("Role", ['teacher', 'student'])
-        submitted = st.form_submit_button("Register User")
-        
-        if submitted:
-            success, message = register_user(username, password, role)
-            if success:
-                st.success(message)
-            else:
-                st.error(message)
