@@ -13,9 +13,6 @@ def get_session():
     finally:
         db.close()
 
-def initialize_session_state():
-    pass  # No longer needed as we're using database
-
 def validate_email(email):
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     return bool(re.match(pattern, email))
