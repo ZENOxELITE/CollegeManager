@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
 from utils import validate_student_data
-from database import Student, get_db
 
 def show_student_management():
     st.header("Student Management")
+
+    if "students" not in st.session_state:
+        st.session_state.students = pd.DataFrame(columns=['ID', 'Name', 'Department', 'Year', 'Email', 'Phone'])
 
     tab1, tab2, tab3 = st.tabs(["Add Student", "View/Edit Students", "Search Students"])
 
@@ -25,32 +27,23 @@ def show_student_management():
             if submitted:
                 valid, message = validate_student_data(id, name, department, year, email, phone)
                 if valid:
-                    db = next(get_db())
-                    try:
-                        new_student = Student(
-                            id=id,
-                            name=name,
-                            department=department,
-                            year=year,
-                            email=email,
-                            phone=phone
-                        )
-                        db.add(new_student)
-                        db.commit()
-                        st.success("Student added successfully!")
-                    except Exception as e:
-                        st.error(f"Error adding student: {str(e)}")
-                    finally:
-                        db.close()
+                    new_student = pd.DataFrame([{
+                        'ID': id,
+                        'Name': name,
+                        'Department': department,
+                        'Year': year,
+                        'Email': email,
+                        'Phone': phone
+                    }])
+                    st.session_state.students = pd.concat([st.session_state.students, new_student], ignore_index=True)
+                    st.success("Student added successfully!")
                 else:
                     st.error(message)
 
     with tab2:
-        from utils import get_all_students
-        students_df = get_all_students()
-        if not students_df.empty:
+        if not st.session_state.students.empty:
             st.subheader("All Students")
-            st.dataframe(students_df, use_container_width=True)
+            st.dataframe(st.session_state.students, use_container_width=True)
         else:
             st.info("No students registered yet")
 
@@ -58,10 +51,9 @@ def show_student_management():
         st.subheader("Search Students")
         search_term = st.text_input("Search by Name or ID")
         if search_term:
-            students_df = get_all_students()
-            result = students_df[
-                students_df['Name'].str.contains(search_term, case=False) |
-                students_df['ID'].str.contains(search_term, case=False)
+            result = st.session_state.students[
+                st.session_state.students['Name'].str.contains(search_term, case=False) |
+                st.session_state.students['ID'].str.contains(search_term, case=False)
             ]
             if not result.empty:
                 st.dataframe(result)

@@ -1,9 +1,6 @@
 import streamlit as st
 from components import dashboard, student_management, teacher_management
-from database import init_db
-
-# Initialize database
-init_db()
+from utils import initialize_session_state
 
 st.set_page_config(
     page_title="College Management System",
@@ -12,6 +9,9 @@ st.set_page_config(
 )
 
 def main():
+    # Initialize session state
+    initialize_session_state()
+
     # Sidebar navigation
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
