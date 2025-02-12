@@ -1,9 +1,11 @@
 import streamlit as st
-from utils import validate_teacher_data, get_all_teachers
-from database import Teacher, get_db
+from utils import validate_teacher_data
 
 def show_teacher_management():
     st.header("Teacher Management")
+
+    if "teachers" not in st.session_state:
+        st.session_state.teachers = pd.DataFrame(columns=['ID', 'Name', 'Department', 'Subjects', 'Email', 'Phone'])
 
     tab1, tab2, tab3 = st.tabs(["Add Teacher", "View/Edit Teachers", "Search Teachers"])
 
@@ -24,31 +26,28 @@ def show_teacher_management():
             if submitted:
                 valid, message = validate_teacher_data(id, name, department, subjects, email, phone)
                 if valid:
-                    db = next(get_db())
-                    try:
-                        new_teacher = Teacher(
-                            id=id,
-                            name=name,
-                            department=department,
-                            subjects=subjects,
-                            email=email,
-                            phone=phone
-                        )
-                        db.add(new_teacher)
-                        db.commit()
-                        st.success("Teacher added successfully!")
-                    except Exception as e:
-                        st.error(f"Error adding teacher: {str(e)}")
-                    finally:
-                        db.close()
+                    new_teacher = {
+                        'ID': id,
+                        'Name': name,
+                        'Department': department,
+                        'Subjects': subjects,
+                        'Email': email,
+                        'Phone': phone
+                    }
+                    st.session_state.teachers.loc[len(st.session_state.teachers)] = new_teacher
+                    st.success("Teacher added successfully!")
                 else:
                     st.error(message)
 
     with tab2:
-        teachers_df = get_all_teachers()
-        if not teachers_df.empty:
+        if not st.session_state.teachers.empty:
             st.subheader("All Teachers")
-            st.dataframe(teachers_df, use_container_width=True)
+            edited_df = st.data_editor(
+                st.session_state.teachers,
+                num_rows="dynamic",
+                use_container_width=True
+            )
+            st.session_state.teachers = edited_df
         else:
             st.info("No teachers registered yet")
 
@@ -56,11 +55,13 @@ def show_teacher_management():
         st.subheader("Search Teachers")
         search_term = st.text_input("Search by Name or ID")
         if search_term:
-            result = teachers_df[
-                teachers_df['Name'].str.contains(search_term, case=False) |
-                teachers_df['ID'].str.contains(search_term, case=False)
+            result = st.session_state.teachers[
+                st.session_state.teachers['Name'].str.contains(search_term, case=False) |
+                st.session_state.teachers['ID'].str.contains(search_term, case=False)
             ]
             if not result.empty:
                 st.dataframe(result)
             else:
                 st.warning("No matching records found")
+
+import pandas as pd

@@ -1,10 +1,6 @@
 import streamlit as st
 from components import dashboard, student_management, teacher_management
 from utils import initialize_session_state
-from database import init_db
-
-# Initialize database
-init_db()
 
 st.set_page_config(
     page_title="College Management System",
