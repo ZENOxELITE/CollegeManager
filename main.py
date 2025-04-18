@@ -1,7 +1,8 @@
 import streamlit as st
-from components import dashboard, student_management, teacher_management
+from components import dashboard, student_management, teacher_management, class_schedule
 from utils import initialize_session_state
 from auth import init_auth, show_login_form, logout
+from database import init_db
 
 
 st.set_page_config(
@@ -71,21 +72,21 @@ def main():
             if st.session_state.user_role == 'admin':
                 page = st.radio(
                     "Navigation",
-                    ["Dashboard", "Student Management", "Teacher Management", "User Management"],
+                    ["Dashboard", "Student Management", "Teacher Management", "Class Schedule", "User Management"],
                     horizontal=True,
                     key="nav_admin"
                 )
             elif st.session_state.user_role == 'teacher':
                 page = st.radio(
                     "Navigation",
-                    ["Dashboard", "Student Management"],
+                    ["Dashboard", "Student Management", "Class Schedule"],
                     horizontal=True,
                     key="nav_teacher"
                 )
             else:  # student role
                 page = st.radio(
                     "Navigation",
-                    ["Dashboard"],
+                    ["Dashboard", "Class Schedule"],
                     horizontal=True,
                     key="nav_student"
                 )
@@ -102,6 +103,9 @@ def main():
         student_management.show_student_management()
     elif page == "Teacher Management" and st.session_state.user_role == 'admin':
         teacher_management.show_teacher_management()
+    elif page == "Class Schedule":
+        # All roles have access to class schedule, but with different permissions
+        class_schedule.show_schedule_management()
     elif page == "User Management" and st.session_state.user_role == 'admin':
         from auth import show_register_form
         st.header("User Management")

@@ -1,6 +1,7 @@
 import streamlit as st
 import hashlib
-from typing import Optional
+from typing import Optional, Tuple
+from database import User, SessionLocal
 
 def hash_password(password: str) -> str:
     """Hash a password for storing."""
@@ -14,24 +15,42 @@ def init_auth():
         st.session_state.user_role = None
     if 'username' not in st.session_state:
         st.session_state.username = None
-    if 'users' not in st.session_state:
-        # Initialize with a default admin user
-        st.session_state.users = {
-            'admin': {
-                'password': hash_password('admin123'),
-                'role': 'admin'
-            }
-        }
+    
+    # Check if admin user exists, if not create one
+    db = SessionLocal()
+    try:
+        admin_user = db.query(User).filter(User.username == 'admin').first()
+        if not admin_user:
+            # Create default admin user
+            admin_user = User(
+                username='admin',
+                password=hash_password('admin123'),
+                role='admin'
+            )
+            db.add(admin_user)
+            db.commit()
+            print("Default admin user created")
+    except Exception as e:
+        print(f"Error checking for admin user: {str(e)}")
+    finally:
+        db.close()
 
 def login(username: str, password: str) -> bool:
-    """Authenticate a user and set up their session."""
-    if username in st.session_state.users:
-        if st.session_state.users[username]['password'] == hash_password(password):
+    """Authenticate a user and set up their session using database."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user and user.password == hash_password(password):
             st.session_state.authenticated = True
-            st.session_state.user_role = st.session_state.users[username]['role']
+            st.session_state.user_role = user.role
             st.session_state.username = username
             return True
-    return False
+        return False
+    except Exception as e:
+        print(f"Login error: {str(e)}")
+        return False
+    finally:
+        db.close()
 
 def logout():
     """Clear the session state."""
@@ -39,18 +58,32 @@ def logout():
     st.session_state.user_role = None
     st.session_state.username = None
 
-def register_user(username: str, password: str, role: str) -> tuple[bool, str]:
-    """Register a new user."""
-    if username in st.session_state.users:
-        return False, "Username already exists"
+def register_user(username: str, password: str, role: str) -> Tuple[bool, str]:
+    """Register a new user in the database."""
     if role not in ['admin', 'teacher', 'student']:
         return False, "Invalid role"
-
-    st.session_state.users[username] = {
-        'password': hash_password(password),
-        'role': role
-    }
-    return True, "User registered successfully"
+    
+    db = SessionLocal()
+    try:
+        # Check if username already exists
+        existing_user = db.query(User).filter(User.username == username).first()
+        if existing_user:
+            return False, "Username already exists"
+        
+        # Create new user
+        new_user = User(
+            username=username,
+            password=hash_password(password),
+            role=role
+        )
+        db.add(new_user)
+        db.commit()
+        return True, "User registered successfully"
+    except Exception as e:
+        db.rollback()
+        return False, f"Registration error: {str(e)}"
+    finally:
+        db.close()
 
 def show_login_form():
     """Display the login form."""
