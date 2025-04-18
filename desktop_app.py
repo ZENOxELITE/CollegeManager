@@ -9,6 +9,10 @@ import re
 import hashlib
 import os
 from datetime import datetime, date, time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Time, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, relationship
