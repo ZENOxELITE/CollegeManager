@@ -3,33 +3,35 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Time,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, relationship
 
-# Set up database URL using environment variables
+# MySQL connection parameters - modify these when setting up on your computer
+MYSQL_HOST = "localhost"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = ""  # Set this to your MySQL password
+MYSQL_DATABASE = "college_management"
+MYSQL_PORT = 3306
+
+# Set up database URL
 try:
-    # First try to use PostgreSQL if available
-    if os.getenv("DATABASE_URL"):
-        DATABASE_URL = os.getenv("DATABASE_URL")
-        print("Attempting to connect to PostgreSQL database...")
-        # Try to connect to test if credentials work
-        import psycopg2
-        conn_parts = DATABASE_URL.split("//")[1].split("@")
-        user_pass = conn_parts[0].split(":")
-        host_port_db = conn_parts[1].split("/")
-        try:
-            # Just testing connection, don't store
-            conn = psycopg2.connect(
-                host=host_port_db[0],
-                database=host_port_db[1] if len(host_port_db) > 1 else "postgres",
-                user=user_pass[0],
-                password=user_pass[1] if len(user_pass) > 1 else ""
-            )
-            conn.close()
-            print("PostgreSQL connection successful")
-        except Exception as e:
-            print(f"PostgreSQL connection failed: {str(e)}")
-            print("Falling back to SQLite database")
-            DATABASE_URL = "sqlite:///college_management.db"
-    else:
-        print("No DATABASE_URL found, using SQLite database")
+    # Try to use MySQL if available
+    try:
+        import pymysql
+        print("Attempting to connect to MySQL database...")
+        # Create MySQL connection URL
+        DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+        
+        # Test if connection works
+        conn = pymysql.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            port=MYSQL_PORT,
+            connect_timeout=5
+        )
+        conn.close()
+        print("MySQL connection successful")
+    except Exception as e:
+        print(f"MySQL connection failed: {str(e)}")
+        print("Falling back to SQLite database")
         DATABASE_URL = "sqlite:///college_management.db"
 except Exception as e:
     print(f"Error setting up database connection: {str(e)}")
@@ -37,7 +39,7 @@ except Exception as e:
     DATABASE_URL = "sqlite:///college_management.db"
 
 # Log database connection information for debugging (sanitized)
-print(f"Using database: {'PostgreSQL' if 'postgres' in DATABASE_URL.lower() else 'SQLite'}")
+print(f"Using database: {'MySQL' if 'mysql' in DATABASE_URL.lower() else 'SQLite'}")
 
 # Configure SQLAlchemy engine
 engine = create_engine(
