@@ -1,52 +1,15 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import os
 
 from database import get_db, Student, Teacher, ClassSchedule, Course, ClassEnrollment
-from send_message import send_twilio_message, send_notification_to_student, send_class_notification
 
 def show_notifications():
     """Display the notifications management component."""
-    st.header("📲 Notifications")
+    st.header("📧 Notifications")
     
-    # Check if Twilio is configured
-    twilio_configured = all([
-        os.environ.get("TWILIO_ACCOUNT_SID"),
-        os.environ.get("TWILIO_AUTH_TOKEN"),
-        os.environ.get("TWILIO_PHONE_NUMBER")
-    ])
-    
-    if not twilio_configured:
-        st.warning(
-            "Twilio is not configured. Please set the following environment variables to enable SMS notifications:\n"
-            "- TWILIO_ACCOUNT_SID\n"
-            "- TWILIO_AUTH_TOKEN\n"
-            "- TWILIO_PHONE_NUMBER"
-        )
-        
-        # Show configuration form
-        with st.expander("Configure Twilio"):
-            st.info("Enter your Twilio credentials. These will be stored as environment variables for the current session.")
-            
-            with st.form("twilio_config_form"):
-                account_sid = st.text_input("Account SID", placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-                auth_token = st.text_input("Auth Token", type="password", placeholder="your_auth_token")
-                phone_number = st.text_input("Twilio Phone Number", placeholder="+1234567890")
-                
-                submitted = st.form_submit_button("Save Configuration")
-                
-                if submitted:
-                    if account_sid and auth_token and phone_number:
-                        # Set environment variables
-                        os.environ["TWILIO_ACCOUNT_SID"] = account_sid
-                        os.environ["TWILIO_AUTH_TOKEN"] = auth_token
-                        os.environ["TWILIO_PHONE_NUMBER"] = phone_number
-                        
-                        st.success("Twilio configuration saved for this session")
-                        st.rerun()
-                    else:
-                        st.error("Please fill in all fields")
+    # Message about using email or other notification methods
+    st.info("This is a simplified notification dashboard. In a production environment, you would connect to an email service or other notification system.")
     
     # Tabs for different notification types
     tab1, tab2, tab3 = st.tabs(["Individual Notifications", "Class Notifications", "Bulk Notifications"])
@@ -74,7 +37,7 @@ def show_notifications():
                 message = st.text_area(
                     "Message", 
                     placeholder="Enter your message here",
-                    help="This message will be sent as an SMS to the student's phone number."
+                    help="This would be sent as an email or notification to the student."
                 )
                 
                 submitted = st.form_submit_button("Send Notification")
@@ -82,16 +45,13 @@ def show_notifications():
                 if submitted:
                     if message:
                         student_id = student_options[student_selection]
+                        student = db.query(Student).filter(Student.id == student_id).first()
                         
-                        # Display a spinner while sending
-                        with st.spinner("Sending notification..."):
-                            # Send notification
-                            result = send_notification_to_student(student_id, message, db)
-                            
-                            if result["success"]:
-                                st.success(result["message"])
-                            else:
-                                st.error(result["message"])
+                        if student:
+                            st.success(f"Message would be sent to {student.name} ({student.email})")
+                            st.code(message)
+                        else:
+                            st.error("Student not found")
                     else:
                         st.error("Please enter a message")
     
@@ -125,7 +85,7 @@ def show_notifications():
                 message = st.text_area(
                     "Message", 
                     placeholder="Enter your message here",
-                    help="This message will be sent as an SMS to all students enrolled in the selected class."
+                    help="This would be sent as an email or notification to all students enrolled in the selected class."
                 )
                 
                 submitted = st.form_submit_button("Send to All Enrolled Students")
@@ -134,24 +94,30 @@ def show_notifications():
                     if message:
                         class_id = class_options[class_selection]
                         
-                        # Display a spinner while sending
-                        with st.spinner("Sending notifications..."):
-                            # Send notifications
-                            result = send_class_notification(class_id, message, db)
+                        # Get enrollments for this class
+                        enrollments = db.query(ClassEnrollment).filter(ClassEnrollment.class_schedule_id == class_id).all()
+                        student_ids = [e.student_id for e in enrollments]
+                        students = db.query(Student).filter(Student.id.in_(student_ids)).all()
+                        
+                        if students:
+                            st.success(f"Message would be sent to {len(students)} students enrolled in {class_selection}")
                             
-                            if result["success"]:
-                                st.success(result["message"])
-                                
-                                # Show details in an expander
-                                with st.expander("Details"):
-                                    # Create a DataFrame for the results
-                                    details_df = pd.DataFrame(result["details"])
-                                    if not details_df.empty:
-                                        st.dataframe(details_df)
-                                    else:
-                                        st.info("No details available")
-                            else:
-                                st.error(result["message"])
+                            # Show recipients in an expander
+                            with st.expander("Recipients"):
+                                recipients_df = pd.DataFrame([
+                                    {
+                                        "ID": s.id,
+                                        "Name": s.name,
+                                        "Email": s.email,
+                                        "Phone": s.phone
+                                    }
+                                    for s in students
+                                ])
+                                st.dataframe(recipients_df)
+                            
+                            st.code(message)
+                        else:
+                            st.warning("No students enrolled in this class")
                     else:
                         st.error("Please enter a message")
     
@@ -165,6 +131,8 @@ def show_notifications():
             options=["All Students", "By Department", "By Year", "Custom List"]
         )
         
+        recipients = []
+        
         if recipient_type == "All Students":
             # Get count of all students
             student_count = db.query(Student).count()
@@ -177,46 +145,56 @@ def show_notifications():
             departments = db.query(Student.department).distinct().all()
             department_list = [dept[0] for dept in departments]
             
-            selected_dept = st.selectbox("Select Department", department_list)
-            
-            # Get students in the selected department
-            recipients = db.query(Student).filter(Student.department == selected_dept).all()
-            st.info(f"This will send to {len(recipients)} students in the {selected_dept} department.")
+            if department_list:
+                selected_dept = st.selectbox("Select Department", department_list)
+                
+                # Get students in the selected department
+                recipients = db.query(Student).filter(Student.department == selected_dept).all()
+                st.info(f"This will send to {len(recipients)} students in the {selected_dept} department.")
+            else:
+                st.warning("No departments found")
             
         elif recipient_type == "By Year":
             # Get all unique years
             years = db.query(Student.year).distinct().all()
             year_list = [year[0] for year in years]
             
-            selected_year = st.selectbox("Select Year", year_list)
-            
-            # Get students in the selected year
-            recipients = db.query(Student).filter(Student.year == selected_year).all()
-            st.info(f"This will send to {len(recipients)} students in Year {selected_year}.")
+            if year_list:
+                selected_year = st.selectbox("Select Year", year_list)
+                
+                # Get students in the selected year
+                recipients = db.query(Student).filter(Student.year == selected_year).all()
+                st.info(f"This will send to {len(recipients)} students in Year {selected_year}.")
+            else:
+                st.warning("No year data found")
             
         elif recipient_type == "Custom List":
             # Get all students
             all_students = db.query(Student).all()
             
-            # Create multiselect with student names
-            selected_students = st.multiselect(
-                "Select Students",
-                options=[f"{s.id}: {s.name}" for s in all_students],
-                default=[]
-            )
-            
-            # Extract IDs from selections
-            selected_ids = [int(s.split(":")[0]) for s in selected_students]
-            
-            # Get selected students
-            recipients = db.query(Student).filter(Student.id.in_(selected_ids)).all()
-            st.info(f"This will send to {len(recipients)} selected students.")
+            if all_students:
+                # Create multiselect with student names
+                selected_students = st.multiselect(
+                    "Select Students",
+                    options=[f"{s.id}: {s.name}" for s in all_students],
+                    default=[]
+                )
+                
+                # Extract IDs from selections
+                if selected_students:
+                    selected_ids = [int(s.split(":")[0]) for s in selected_students]
+                    
+                    # Get selected students
+                    recipients = db.query(Student).filter(Student.id.in_(selected_ids)).all()
+                    st.info(f"This will send to {len(recipients)} selected students.")
+            else:
+                st.warning("No students in database")
         
         # Message input
         message = st.text_area(
             "Message", 
             placeholder="Enter your message here",
-            help="This message will be sent as an SMS to all selected recipients."
+            help="This would be sent as an email or notification to all selected recipients."
         )
         
         # Preview recipients in an expander
@@ -229,6 +207,7 @@ def show_notifications():
                         "Name": r.name,
                         "Department": r.department,
                         "Year": r.year,
+                        "Email": r.email,
                         "Phone": r.phone
                     }
                     for r in recipients
@@ -244,56 +223,8 @@ def show_notifications():
             elif not recipients:
                 st.error("No recipients selected")
             else:
-                # Display a spinner while sending
-                with st.spinner(f"Sending to {len(recipients)} recipients..."):
-                    # Collect results
-                    results = {
-                        "success": True,
-                        "total": len(recipients),
-                        "sent": 0,
-                        "failed": 0,
-                        "details": []
-                    }
-                    
-                    # Send to each recipient
-                    for student in recipients:
-                        # Format phone number for Twilio
-                        phone = student.phone
-                        if not phone.startswith('+'):
-                            phone = f"+{phone}"
-                        
-                        # Send message
-                        result = send_twilio_message(phone, message)
-                        
-                        # Update results
-                        if result["success"]:
-                            results["sent"] += 1
-                        else:
-                            results["failed"] += 1
-                        
-                        results["details"].append({
-                            "student_id": student.id,
-                            "student_name": student.name,
-                            "success": result["success"],
-                            "message": result["message"]
-                        })
-                    
-                    # Show results
-                    if results["failed"] == results["total"]:
-                        st.error(f"Failed to send all {results['total']} messages")
-                    elif results["failed"] > 0:
-                        st.warning(f"Sent {results['sent']} messages, {results['failed']} failed")
-                    else:
-                        st.success(f"Successfully sent all {results['total']} messages")
-                    
-                    # Show details in an expander
-                    with st.expander("Detailed Results"):
-                        # Create a DataFrame for the results
-                        details_df = pd.DataFrame(results["details"])
-                        if not details_df.empty:
-                            st.dataframe(details_df)
-                        else:
-                            st.info("No details available")
+                st.success(f"Message would be sent to {len(recipients)} recipients")
+                st.code(message)
     
     # Close the database session
     db.close()

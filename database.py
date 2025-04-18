@@ -2,13 +2,17 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Time, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, relationship
+from dotenv import load_dotenv
 
-# MySQL connection parameters - modify these when setting up on your computer
-MYSQL_HOST = "localhost"
-MYSQL_USER = "root"
-MYSQL_PASSWORD = ""  # Set this to your MySQL password
-MYSQL_DATABASE = "college_management"
-MYSQL_PORT = 3306
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+# MySQL connection parameters - check environment variables first, then use defaults
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
+MYSQL_USER = os.environ.get("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")  # Set this to your MySQL password
+MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "college_management")
+MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
 
 # Set up database URL
 DATABASE_URL = None  # Initialize this variable to be used throughout the module
