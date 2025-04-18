@@ -4,12 +4,15 @@
  * This file handles the connection to MySQL database
  */
 
-// Database configuration
+// Database configuration - modify these to match your local setup
 $db_host = 'localhost';      // Database host (usually localhost)
 $db_user = 'root';           // Database username (usually root for local development)
 $db_password = '';           // Database password (set this to your MySQL password)
 $db_name = 'college_management'; // Database name
 $db_port = 3306;             // Database port (default is 3306 for MySQL)
+
+// CREATE DATABASE IF NOT EXISTS college_management;
+// If you're running this the first time, uncomment the line above or create the database manually
 
 // Create database connection
 $conn = null;

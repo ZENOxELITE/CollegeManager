@@ -1,156 +1,141 @@
-# College Management System - Local Setup Guide
+# Local Setup Guide for College Management System
 
-This guide will help you set up and run the College Management System on your local computer without Replit.
+This guide will help you set up the College Management System to run on your local computer without Replit.
 
 ## Prerequisites
 
-You need to have the following software installed on your computer:
+### Required Software
+- Python 3.8 or higher
+- MySQL Server (recommended) or alternatively SQLite
+- PHP and a web server (optional, for PHP components)
 
-1. **Python 3.11** or newer
-2. **MySQL** database server (recommended: MySQL 8.0 or newer)
-3. **PHP** (only if you want to use the PHP database connection file)
+### Required Python Packages
+```
+pip install streamlit pandas plotly sqlalchemy pymysql python-dotenv twilio
+```
 
-## Step 1: Set Up MySQL Database
+## Step 1: Database Setup
 
-1. Install MySQL on your computer if you haven't already:
-   - Windows: Download and install from [MySQL Website](https://dev.mysql.com/downloads/installer/)
-   - Mac: Use Homebrew with `brew install mysql`
-   - Linux: Use package manager, e.g., `sudo apt install mysql-server`
+You have two options for the database:
 
-2. Start MySQL server:
-   - Windows: It usually starts automatically as a service
-   - Mac: `brew services start mysql`
-   - Linux: `sudo systemctl start mysql`
+### Option 1: MySQL (Recommended)
+1. Follow the instructions in `MYSQL_SETUP_GUIDE.md` to set up MySQL and create the necessary tables.
+2. This is recommended for production use and better performance.
 
-3. Create the database and required tables:
-   - Option 1: Use MySQL Workbench or phpMyAdmin to run the `setup_database.sql` script
-   - Option 2: Run from command line:
-     ```
-     mysql -u root -p < setup_database.sql
-     ```
+### Option 2: SQLite (Simple)
+1. The application will automatically fall back to SQLite if MySQL is not available.
+2. This is a good option for testing or if you don't want to install MySQL.
 
-## Step 2: Install Python Dependencies
+## Step 2: Choose How to Run the Application
 
-1. Open a command prompt or terminal
-2. Navigate to the project directory
-3. Create a virtual environment (recommended):
+You have two ways to run the application:
+
+### Option 1: Run the Standalone Desktop Version
+1. Open a terminal or command prompt
+2. Navigate to the directory containing your project files
+3. Run the standalone file:
    ```
-   python -m venv venv
+   python desktop_app.py
    ```
+4. The application will automatically open in your default web browser
 
-4. Activate the virtual environment:
-   - Windows: `venv\Scripts\activate`
-   - Mac/Linux: `source venv/bin/activate`
-
-5. Install required packages:
-   ```
-   pip install streamlit pandas plotly sqlalchemy pymysql python-dotenv
-   ```
-
-## Step 3: Configure Database Connection
-
-1. Update the MySQL connection parameters in `database.py`:
-   - Set `MYSQL_USER` to your MySQL username (default: "root")
-   - Set `MYSQL_PASSWORD` to your MySQL password
-   - Adjust `MYSQL_HOST`, `MYSQL_DATABASE`, and `MYSQL_PORT` if needed
-
-2. Alternatively, create a `.env` file in the project root with:
-   ```
-   MYSQL_HOST=localhost
-   MYSQL_USER=root
-   MYSQL_PASSWORD=your_password_here
-   MYSQL_DATABASE=college_management
-   MYSQL_PORT=3306
-   ```
-
-## Step 4: Run the Application
-
-1. Make sure your virtual environment is activated
-2. Start the Streamlit application:
+### Option 2: Run the Modular Version
+1. Open a terminal or command prompt
+2. Navigate to the directory containing your project files
+3. Run the Streamlit application:
    ```
    streamlit run main.py
    ```
+4. The application will automatically open in your default web browser
 
-3. Open your web browser and go to:
-   ```
-   http://localhost:8501
-   ```
+## Step 3: Login to the Application
 
-4. Log in with the default credentials:
+1. Use the default admin credentials:
    - Username: `admin`
    - Password: `admin123`
 
-## Using PHP for Database Connection (Optional)
+2. After logging in, you'll have access to all features based on your role (Admin, Teacher, or Student).
 
-If you want to use the PHP database connection:
+## Optional: PHP Components
 
-1. Install a PHP server like XAMPP, WAMP, or MAMP
-2. Place the `db_connection.php` file in your PHP project
-3. Include it in your PHP files with:
-   ```php
-   require_once 'db_connection.php';
-   ```
+If you want to use the PHP components of the application:
 
-4. Use the provided functions to interact with the database:
-   ```php
-   // Example: Select query
-   $students = db_select("SELECT * FROM students WHERE department = ?", ["Computer Science"]);
-   
-   // Example: Insert query
-   $result = db_execute(
-       "INSERT INTO students (name, department, year, email, phone) VALUES (?, ?, ?, ?, ?)",
-       ["John Doe", "Computer Science", 2, "john@example.com", "1234567890"]
-   );
-   ```
+1. Set up a web server (e.g., Apache, Nginx) with PHP support
+2. Place the PHP files in your web server directory
+3. Update the database connection parameters in `db_connection.php`
+4. Access the PHP files through your web server (e.g., http://localhost/phpmyadmin/)
 
 ## Troubleshooting
 
 ### Database Connection Issues
-
-1. Verify MySQL is running with:
-   ```
-   mysql --version
-   ```
-
-2. Test database connection:
-   ```
-   mysql -u root -p -e "USE college_management; SELECT * FROM users LIMIT 1;"
-   ```
-
-3. Check your MySQL credentials in `database.py`
+1. Check your MySQL credentials in `database.py` (or `desktop_app.py` if using the standalone version)
+2. Verify that MySQL server is running
+3. If using MySQL, run the `test_mysql_connection.php` script to check your connection
 
 ### Application Not Starting
-
-1. Verify all required packages are installed:
+1. Check that all required packages are installed:
    ```
-   pip list
+   pip install -r requirements.txt
    ```
-
-2. Check Python version (should be 3.11+):
+2. Verify that Python 3.8 or higher is installed:
    ```
    python --version
    ```
+3. Check the console output for specific error messages
 
-3. Try running with debug mode:
+### Address Already in Use Error
+If you see an error like `Address already in use`, another application might be using port 8501 (or the port Streamlit is trying to use).
+
+To fix this:
+1. Close any other Streamlit applications that might be running
+2. Or create a `.streamlit/config.toml` file with:
    ```
-   streamlit run main.py --server.enableCORS=false --server.enableXsrfProtection=false
+   [server]
+   port = 8502  # Use a different port
    ```
 
-## Required Python Modules
+## Add SMS Notifications (Optional)
 
-Here's a summary of all the Python modules you need to install:
+To enable SMS notifications, you'll need a Twilio account:
 
-```
-streamlit
-pandas
-plotly
-sqlalchemy
-pymysql
-python-dotenv
-components
+1. Sign up at [Twilio](https://www.twilio.com/)
+2. Get your Account SID, Auth Token, and a Twilio phone number
+3. Set environment variables (or create a `.env` file) with:
+   ```
+   TWILIO_ACCOUNT_SID=your_account_sid
+   TWILIO_AUTH_TOKEN=your_auth_token
+   TWILIO_PHONE_NUMBER=your_twilio_phone_number
+   ```
+4. Use the provided `send_message.py` file to send SMS notifications
+
+## Customization
+
+### Changing the Theme
+Edit the `.streamlit/config.toml` file to change the theme colors:
+
+```toml
+[theme]
+primaryColor="#1E88E5"
+backgroundColor="#FFFFFF"
+secondaryBackgroundColor="#F5F5F5"
+textColor="#232323"
+font="sans serif"
 ```
 
-You can install them all at once with:
-```
-pip install streamlit pandas plotly sqlalchemy pymysql python-dotenv components
-```
+### Adding More Features
+The application has a modular structure:
+- Add new components in the `components` folder
+- Update `main.py` to include your new components
+- Modify database models in `database.py` as needed
+
+## Documentation
+
+For more detailed information on specific components:
+- Database structure and models: `database.py`
+- Authentication system: `auth.py`
+- Utility functions: `utils.py`
+- Component modules: `components` folder
+
+## Contact
+
+For issues or questions, please refer to the documentation or create an issue in the repository.

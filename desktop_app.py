@@ -56,13 +56,49 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Database setup - simplified for desktop usage
-DATABASE_URL = "sqlite:///college_management.db"
+# Database setup for desktop usage
+# MySQL connection parameters - modify these to match your local setup
+MYSQL_HOST = "localhost"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = ""  # Set this to your MySQL password
+MYSQL_DATABASE = "college_management"
+MYSQL_PORT = 3306
+
+# Set up database URL
+try:
+    # Try to use MySQL if available
+    try:
+        import pymysql
+        print("Attempting to connect to MySQL database...")
+        # Create MySQL connection URL
+        DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+        
+        # Test if connection works
+        conn = pymysql.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            port=MYSQL_PORT,
+            connect_timeout=5
+        )
+        conn.close()
+        print("MySQL connection successful")
+    except Exception as e:
+        print(f"MySQL connection failed: {str(e)}")
+        print("Falling back to SQLite database")
+        DATABASE_URL = "sqlite:///college_management.db"
+except Exception as e:
+    print(f"Error setting up database connection: {str(e)}")
+    print("Falling back to SQLite database")
+    DATABASE_URL = "sqlite:///college_management.db"
+
+# Log database connection information for debugging
+print(f"Using database: {'MySQL' if 'mysql' in DATABASE_URL.lower() else 'SQLite'}")
 
 # Configure SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
     pool_pre_ping=True,
     pool_recycle=3600,
 )
@@ -155,7 +191,7 @@ class ClassEnrollment(Base):
     
     # Relationships
     student = relationship("Student", back_populates="enrollments")
-    class_schedule = relationship("ClassSchedule", back_populates="class_schedule")
+    class_schedule = relationship("ClassSchedule", back_populates="enrollments")
 
 #-------------------- DATABASE FUNCTIONS --------------------#
 

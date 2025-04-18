@@ -1,10 +1,10 @@
--- MySQL database setup script for College Management System
--- Run this script to create the necessary database and tables
+-- College Management System Database Setup Script
+-- Run this script to set up your MySQL database structure
 
--- Create the database if it doesn't exist
+-- Create database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS college_management;
 
--- Use the database
+-- Use the college_management database
 USE college_management;
 
 -- Create users table
@@ -73,10 +73,37 @@ CREATE TABLE IF NOT EXISTS class_enrollments (
     FOREIGN KEY (class_schedule_id) REFERENCES class_schedules(id) ON DELETE CASCADE
 );
 
--- Insert default admin user (username: admin, password: admin123 - SHA256 hashed)
+-- Insert default admin user (username: admin, password: admin123)
+-- Password is stored as SHA-256 hash
 INSERT INTO users (username, password, role)
-VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin')
-ON DUPLICATE KEY UPDATE username = 'admin';
+SELECT 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
 
--- Success message
-SELECT 'Database setup completed successfully!' as 'Message';
+-- Insert sample data for testing
+-- Sample departments
+INSERT INTO students (name, department, year, email, phone)
+SELECT 'John Smith', 'Computer Science', 2, 'john.smith@example.com', '1234567890'
+WHERE NOT EXISTS (SELECT 1 FROM students WHERE email = 'john.smith@example.com');
+
+INSERT INTO students (name, department, year, email, phone)
+SELECT 'Maria Garcia', 'Mathematics', 3, 'maria.garcia@example.com', '2345678901'
+WHERE NOT EXISTS (SELECT 1 FROM students WHERE email = 'maria.garcia@example.com');
+
+INSERT INTO teachers (name, department, subjects, email, phone)
+SELECT 'Dr. James Wilson', 'Computer Science', 'Programming, Algorithms', 'james.wilson@example.com', '3456789012'
+WHERE NOT EXISTS (SELECT 1 FROM teachers WHERE email = 'james.wilson@example.com');
+
+INSERT INTO teachers (name, department, subjects, email, phone)
+SELECT 'Dr. Emily Chen', 'Mathematics', 'Calculus, Linear Algebra', 'emily.chen@example.com', '4567890123'
+WHERE NOT EXISTS (SELECT 1 FROM teachers WHERE email = 'emily.chen@example.com');
+
+INSERT INTO courses (course_code, title, description, department, credit_hours)
+SELECT 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 'Computer Science', 3
+WHERE NOT EXISTS (SELECT 1 FROM courses WHERE course_code = 'CS101');
+
+INSERT INTO courses (course_code, title, description, department, credit_hours)
+SELECT 'MATH201', 'Calculus I', 'Introduction to differential and integral calculus', 'Mathematics', 4
+WHERE NOT EXISTS (SELECT 1 FROM courses WHERE course_code = 'MATH201');
+
+-- Note: For class_schedules and class_enrollments, you may want to add these after confirming 
+-- the IDs of the inserted teachers, courses, and students in your database.
