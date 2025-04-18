@@ -3,6 +3,7 @@ from components import dashboard, student_management, teacher_management
 from utils import initialize_session_state
 from auth import init_auth, show_login_form, logout
 
+
 st.set_page_config(
     page_title="College Management System",
     page_icon="🎓",
