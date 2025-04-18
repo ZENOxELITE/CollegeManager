@@ -11,20 +11,39 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for responsive design
-st.markdown("""
+# Initialize theme setting in session state if not present
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'light'
+
+# Function to toggle theme
+def toggle_theme():
+    st.session_state.theme = 'dark' if st.session_state.theme == 'light' else 'light'
+    st.rerun()
+
+# Set CSS based on selected theme
+light_theme_css = """
 <style>
-    /* Make buttons more touch-friendly */
+    /* Light theme styles */
+    body {
+        color: #262730;
+        background-color: #ffffff;
+    }
+    .main {
+        background-color: #ffffff;
+    }
     .stButton>button {
         min-height: 40px;
         width: 100%;
+        background-color: #f0f2f6;
+        color: #262730;
     }
-
-    /* Improve form elements on mobile */
+    .css-1qg05tj {
+        background-color: #f0f2f6;
+        color: #262730;
+    }
     .stTextInput>div>div>input {
         min-height: 40px;
     }
-
     /* Better spacing for mobile */
     @media (max-width: 640px) {
         .main {
@@ -35,7 +54,6 @@ st.markdown("""
             padding: 0.25rem 0.5rem;
         }
     }
-
     /* Navigation styling */
     .nav-pills {
         display: flex;
@@ -44,12 +62,67 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+dark_theme_css = """
+<style>
+    /* Dark theme styles */
+    .main {
+        background-color: #0e1117;
+        color: #fafafa;
+    }
+    .stButton>button {
+        min-height: 40px;
+        width: 100%;
+        background-color: #262730;
+        color: #fafafa;
+    }
+    .css-1qg05tj {
+        background-color: #262730;
+        color: #fafafa;
+    }
+    .stTextInput>div>div>input {
+        min-height: 40px;
+    }
+    /* Better spacing for mobile */
+    @media (max-width: 640px) {
+        .main {
+            padding: 1rem 0.5rem;
+        }
+        .stRadio > label {
+            font-size: 14px;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+    /* Navigation styling */
+    .nav-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+"""
+
+# Apply the appropriate CSS based on current theme
+if st.session_state.theme == 'light':
+    st.markdown(light_theme_css, unsafe_allow_html=True)
+else:
+    st.markdown(dark_theme_css, unsafe_allow_html=True)
 
 def main():
     # Initialize session states
     initialize_session_state()
     init_auth()
+    
+    # Add theme toggle in sidebar
+    with st.sidebar:
+        st.subheader("🎨 Theme Settings")
+        theme_icon = "🌙" if st.session_state.theme == 'light' else "☀️"
+        theme_label = f"{theme_icon} Switch to {('Dark' if st.session_state.theme == 'light' else 'Light')} Mode"
+        if st.button(theme_label, key="theme_toggle"):
+            toggle_theme()
+        st.divider()
 
     # Page header with navigation and auth info
     st.title("College Management System")
