@@ -26,7 +26,7 @@ def validate_email(email):
     return bool(re.match(pattern, email))
 
 def validate_phone(phone):
-    pattern = r'^\d{10}$'
+    pattern = r'^\d{10,11}$'  # Accept 10 or 11 digits
     return bool(re.match(pattern, phone))
 
 def validate_student_data(id, name, department, year, email, phone):
@@ -35,7 +35,7 @@ def validate_student_data(id, name, department, year, email, phone):
     if not validate_email(email):
         return False, "Invalid email format"
     if not validate_phone(phone):
-        return False, "Phone number must be 10 digits"
+        return False, "Phone number must be 10 or 11 digits"
     if id in st.session_state.students['ID'].values:
         return False, "Student ID already exists"
     return True, "Valid"
@@ -46,7 +46,7 @@ def validate_teacher_data(id, name, department, subjects, email, phone):
     if not validate_email(email):
         return False, "Invalid email format"
     if not validate_phone(phone):
-        return False, "Phone number must be 10 digits"
+        return False, "Phone number must be 10 or 11 digits"
     if id in st.session_state.teachers['ID'].values:
         return False, "Teacher ID already exists"
     return True, "Valid"
