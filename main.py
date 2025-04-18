@@ -1,5 +1,5 @@
 import streamlit as st
-from components import dashboard, student_management, teacher_management, class_schedule, notifications
+from components import dashboard, student_management, teacher_management, class_schedule, notifications, database_diagnostics
 from utils import initialize_session_state
 from auth import init_auth, show_login_form, logout
 from database import init_db
@@ -72,7 +72,7 @@ def main():
             if st.session_state.user_role == 'admin':
                 page = st.radio(
                     "Navigation",
-                    ["Dashboard", "Student Management", "Teacher Management", "Class Schedule", "Notifications", "User Management"],
+                    ["Dashboard", "Student Management", "Teacher Management", "Class Schedule", "Notifications", "User Management", "Database Diagnostics"],
                     horizontal=True,
                     key="nav_admin"
                 )
@@ -112,6 +112,8 @@ def main():
         show_register_form()
     elif page == "Notifications" and st.session_state.user_role in ['admin', 'teacher']:
         notifications.show_notifications()
+    elif page == "Database Diagnostics" and st.session_state.user_role == 'admin':
+        database_diagnostics.show_database_diagnostics()
     else:
         st.error("You don't have permission to access this page")
 

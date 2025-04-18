@@ -11,24 +11,53 @@ MYSQL_DATABASE = "college_management"
 MYSQL_PORT = 3306
 
 # Set up database URL
+DATABASE_URL = None  # Initialize this variable to be used throughout the module
+
 try:
     # Try to use MySQL if available
     try:
         import pymysql
         print("Attempting to connect to MySQL database...")
-        # Create MySQL connection URL
+        # Create initial MySQL connection URL - may be updated later if host changes
         DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
         
-        # Test if connection works
-        conn = pymysql.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            port=MYSQL_PORT,
-            connect_timeout=5
-        )
-        conn.close()
-        print("MySQL connection successful")
+        # Test if connection works - first try the configured host
+        try:
+            conn = pymysql.connect(
+                host=MYSQL_HOST,
+                user=MYSQL_USER,
+                password=MYSQL_PASSWORD,
+                port=MYSQL_PORT,
+                connect_timeout=5
+            )
+            conn.close()
+            print("MySQL connection successful")
+        except pymysql.err.OperationalError as e:
+            # Check for specific "Cannot assign requested address" error
+            if "Cannot assign requested address" in str(e):
+                if MYSQL_HOST.lower() == 'localhost':
+                    # Try with 127.0.0.1 instead
+                    print("Cannot connect to 'localhost', trying with '127.0.0.1' instead...")
+                    alt_host = '127.0.0.1'
+                    conn = pymysql.connect(
+                        host=alt_host,
+                        user=MYSQL_USER,
+                        password=MYSQL_PASSWORD,
+                        port=MYSQL_PORT,
+                        connect_timeout=5
+                    )
+                    conn.close()
+                    print("MySQL connection successful using 127.0.0.1")
+                    # Update the host for the connection string
+                    MYSQL_HOST = alt_host
+                    # Update the database URL with the new host
+                    DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+                else:
+                    # Re-raise if we're not using 'localhost'
+                    raise
+            else:
+                # Re-raise for other operational errors
+                raise
     except Exception as e:
         print(f"MySQL connection failed: {str(e)}")
         print("Falling back to SQLite database")
