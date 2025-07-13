@@ -15,7 +15,11 @@ MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "college_management")
 MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
 
 # Set up database URL
-DATABASE_URL = None  # Initialize this variable to be used throughout the module
+DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"  # Initialize this variable to be used throughout the module
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/college_management"
+
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 try:
     # Try to use MySQL if available
@@ -53,34 +57,50 @@ try:
                     conn.close()
                     print("MySQL connection successful using 127.0.0.1")
                     # Update the host for the connection string
-                    MYSQL_HOST = alt_host
+                    # MYSQL_HOST = alt_host
                     # Update the database URL with the new host
-                    DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
-                else:
-                    # Re-raise if we're not using 'localhost'
-                    raise
-            else:
-                # Re-raise for other operational errors
-                raise
+                    # DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
     except Exception as e:
-        print(f"MySQL connection failed: {str(e)}")
-        print("Falling back to SQLite database")
-        DATABASE_URL = "sqlite:///college_management.db"
-except Exception as e:
-    print(f"Error setting up database connection: {str(e)}")
-    print("Falling back to SQLite database")
-    DATABASE_URL = "sqlite:///college_management.db"
+        raise RuntimeError(f"❌ MySQL connection failed: {e}")
+                # else:
+                    # Re-raise if we're not using 'localhost'
+                    # raise
+            # else:
+                # Re-raise for other operational errors
+                # raise
+    # except Exception as e:
+        # print(f"MySQL connection failed: {str(e)}")
+        # print("Falling back to SQLite database")
+        # DATABASE_URL = "sqlite:///college_management.db"
+# except Exception as e:
+    # print(f"Error setting up database connection: {str(e)}")
+    # print("Falling back to SQLite database")
+    # DATABASE_URL = "sqlite:///college_management.db"
 
 # Log database connection information for debugging (sanitized)
-print(f"Using database: {'MySQL' if 'mysql' in DATABASE_URL.lower() else 'SQLite'}")
+# print(f"Using database: {'MySQL' if 'mysql' in DATABASE_URL.lower() else 'SQLite'}")
 
 # Configure SQLAlchemy engine
+# engine = create_engine(
+#     DATABASE_URL,
+#     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+#     pool_pre_ping=True,
+#     pool_recycle=3600,
+# )
+except Exception as e:
+    print(f"Unexpected error while setting up MySQL: {e}")
+
+# Create SQLAlchemy engine with MySQL only
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
     pool_pre_ping=True,
     pool_recycle=3600,
 )
+
+# Print which DB is being used
+print(f"Using database: {engine.url}")
+
+
 
 # Create session factory
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
